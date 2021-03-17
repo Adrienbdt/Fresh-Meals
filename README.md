@@ -1,3 +1,13 @@
+# Simple React Project - Fresh Meal 
+
+Author: Adrien B
+
+Please note: enter the zipcode 10001 to access to the next page.
+This is a very small React based application.
+
+
+
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
