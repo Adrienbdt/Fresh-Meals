@@ -13,170 +13,219 @@ import {
 } from "react-bootstrap";
 import htmlParse from "html-react-parser";
 import Navbar from "../components/Navigation/Navbar";
+import ProductModal from "../components/Modals/ProductModal";
+import Footer from "../components/Footer/Footer";
+import {
+  faCartPlus,
+  faShoppingCart,
+  shoppingCart,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 export default function Shop() {
-  // payload stores all our products
   const payload = getProducts();
-  // console.log(payload.products);
-
-  // useState - default state : products are an empty array || state change all the products of the payload will populate the array --> setProducts() from loadProducts
-  // const [products, setProducts] = useState([]);
-
-  // useState - default renders the shoppingCard which is an object containing an empty products {} and a totalPrice {} of 0 || state change --> setShoppingCart() kicks in
   const [shoppingCart, setShoppingCart] = useState({
     products: {},
-    totalPrice: 0.0,
   });
-
-  /// ADRIEN
 
   // Display Total or not - by default should not be displayed
   const [totalShow, setTotalShow] = useState(false);
+
+  const [showModalProductId, setShowModalProductId] = useState();
 
   const toggleTotal = () => {
     setTotalShow((prev) => true);
   };
 
-  // Adding product +
-  const addProductButton = document.querySelector("#addQty");
-  // const [productAdd, setProductAdd] = useState({});
-
-  // const addProduct = () => {
-  //   setProductAdd((prev) => prev + 1);
-  // };
-
-  //Remove product -
-  const removeProductButton = document.querySelector("#removeQty");
-
-  /// ADRIEN END
-
-  // const loadProducts = function (event) {
-  //   setProducts(payload.products);
-  // };
+  //Remove prod from cart
+  const removeProdFromCart = (productId) => {
+    setShoppingCart((current) => {
+      const newProducts = { ...current.products };
+      delete newProducts[productId];
+      return {
+        products: newProducts,
+      };
+    });
+  };
 
   // our shoppingCart STATE will change through setShoppingCart() :
-  // previous state is currentShoppingCart
-  // newProducts is gonna store the object
   const addToShoppingCart = (product) => {
     setShoppingCart((currentShoppingCart) => {
       // products{} assigned to local variable newProducts
       const newProducts = { ...currentShoppingCart.products };
       // newProducts contains all the properties of each product
-      // the newProducts object will generate a new array, each new array object will be identified through its product id and contains an object with the following key values of this product
+      // product key - value all the properties of the targeted product object
+      // quantity key - value --- if this proty, else seduct.id is already part of our newProducts [] then add 1 to the quantit 1
+      const newQuantity = newProducts[product.id]
+        ? newProducts[product.id].quantity + 1
+        : 1;
+
       newProducts[product.id] = {
-        product: product, // product key - value all the properties of the targeted product object
-        quantity: newProducts[product.id] // quantity key - value --- if this product.id is already part of our newProducts [] then add 1 to the quantity, else set 1
-          ? newProducts[product.id].quantity + 1
-          : 1,
+        product: product,
+        quantity: newQuantity,
+        subTotal: newQuantity * product.variants[0].price,
       };
 
-      /* ADRIEN */
-
-      const myFunc = function () {
-        console.log("hi");
-      };
-
-      /* END ADRIEN */
-
-      // SHOPPING CART TOTAL CALCULATION
-      const newTotalPrice =
-        currentShoppingCart.totalPrice + parseFloat(product.variants[0].price);
-      toggleTotal();
+      if (newProducts[product.id].quantity > 0 && totalPrice != null) {
+        toggleTotal();
+      }
 
       return {
         products: newProducts, //OBJECT TO LOOP OVER
-        totalPrice: newTotalPrice, // TOTAL PRICE TO DISPLAY
       };
     });
   };
 
-  //////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////
-  /* REPRESENTATION ELEMENTS ON COMPONENT */
+  const subtractProduct = function (productId) {
+    setShoppingCart((current) => {
+      const newProducts = { ...current.products };
 
-  // REMOVING ELEMENT FROM SHOPPING CART
-  // const removeElement = product;
+      const newProduct = { ...newProducts[productId] };
+      newProduct.quantity = current.products[productId].quantity - 1;
+      const productPrice = newProducts[productId].product.variants[0].price;
+      newProduct.subTotal = newProduct.quantity * productPrice;
+
+      if (newProduct.quantity < 1) {
+        delete newProducts[productId];
+      } else {
+        newProducts[productId] = newProduct;
+      }
+
+      const newShoppingCart = {
+        products: newProducts,
+      };
+      return newShoppingCart;
+    });
+  };
+
+  const showModal = (productId) => {
+    setShowModalProductId(productId);
+  };
+
+  /* COMPONENT RENDERING */
 
   // SHOPPING CART ELEMENTS RENDERING
   const shoppingCartElements = [];
   for (const productId in shoppingCart.products) {
     shoppingCartElements.push(
       <Container>
-        <Row>
+        <Row style={{ paddingTop: "1em" }}>
           <Col
-            lg={6}
+            id="cart_desc_col"
+            lg={8}
             style={{
               display: "flex",
               fontSize: "0.8em",
+              paddingRight: "0px !important",
             }}
           >
             {shoppingCart.products[productId].product.title}
           </Col>
-          <Col lg={1}></Col>
+
           <Col lg={1} style={{ display: "flex", justifyContent: "center" }}>
             <Button
-              data-item={shoppingCart.products[productId].product.title}
+              className="btn_cart_add_rem"
+              data-item={productId}
+              onClick={(event) => subtractProduct(productId)}
               variant="primary"
               size="sm"
               id="removeQty"
             >
-              -
+              <span
+                style={{
+                  transform: "translate(-50%, -55%)",
+                  position: "absolute",
+                  fontWeight: "700",
+                }}
+              >
+                -
+              </span>{" "}
             </Button>
           </Col>
-          <Col lg={2} style={{ display: "flex", justifyContent: "center" }}>
-            <Badge pill variant="light" style={{ width: "50%" }}>
+          <Col lg={1} style={{ display: "flex", justifyContent: "center" }}>
+            <Badge pill style={{ width: "100% !important" }}>
               {shoppingCart.products[productId].quantity}
             </Badge>
           </Col>
           <Col lg={1} style={{ display: "flex", justifyContent: "center" }}>
             <Button
-              data-item={shoppingCart.products[productId].product.title}
+              className="btn_cart_add_rem"
+              onClick={(event) =>
+                addToShoppingCart(shoppingCart.products[productId].product)
+              }
               variant="primary"
               size="sm"
-              id="addQty"
             >
-              +
+              <span
+                style={{
+                  transform: "translate(-50%, -55%)",
+                  position: "absolute",
+                  fontWeight: "700",
+                }}
+              >
+                +
+              </span>{" "}
             </Button>
           </Col>
         </Row>
         <Row>
           <Col>
-            <Button style={{ fontSize: "0.8em" }}>Remove</Button>
+            <Button
+              id="cart_remove_full_item"
+              onClick={(event) => removeProdFromCart(productId)}
+              style={{ fontSize: "0.8em" }}
+            >
+              Remove
+            </Button>
           </Col>
         </Row>
       </Container>
     );
   }
 
-  // const shoppingCartElements = shoppingCart.map((product, idx) => (
-  //   <ListGroup.Item>{product.title}</ListGroup.Item>
-  // ))
-
-  // RENDERING ALL THE PRODUCTS THROUGH THE productElements variable
+  // ALL PRODUCTS
   const productElements = payload.products.map((product, idx) => (
     <Container
+      className="prod_card"
       style={{
         display: "flex",
-        margin: "10px 0",
+        margin: "0.9em 0",
         width: "30%",
-        justifyContent: "space-around",
+        justifyContent: "space-between",
       }}
     >
+      <ProductModal
+        show={showModalProductId === product.id}
+        product={product}
+        handleClose={(event) => setShowModalProductId(null)}
+        addToCart={(event) => {
+          addToShoppingCart(product);
+          setShowModalProductId(null);
+        }}
+      />
       <Row>
-        <Col lg={12}>
-          <Card style={{ height: "550px" }}>
+        <Col>
+          <Card style={{ padding: " 0" }}>
             <Card.Img variant="top" src={product.image.src} />
             <Card.Body>
               <Card.Title>{product.title}</Card.Title>
-              <Card.Text>{htmlParse(product.body_html)}</Card.Text>
-              <Button
-                onClick={(event) => addToShoppingCart(product)}
-                variant="primary"
-              >
-                Add to Cart
-              </Button>
+              <Card.Text>${product.variants[0].price}</Card.Text>
             </Card.Body>
+            <Card.Footer>
+              <Button
+                id="btn_view_more"
+                onClick={(event) => showModal(product.id)}
+                variant="link"
+              >
+                View More
+              </Button>
+              <Button
+                id="btn_add_cart"
+                onClick={(event) => addToShoppingCart(product)}
+              >
+                <FontAwesomeIcon icon={faCartPlus} className="icon_add_cart" />
+              </Button>
+            </Card.Footer>
           </Card>
         </Col>
       </Row>
@@ -184,39 +233,65 @@ export default function Shop() {
   ));
 
   ///////////////////////////
-  // SHOPPING SECTION COMPONENT
+  // SHOPPING SECTION MAIN
   /////////////////////////////
-  return (
-    <Container>
-      <Row>
-        <Col>
-          <Navbar title="Shop" />
-        </Col>
-      </Row>
-      <Row>
-        <Col lg={8}>
-          <Container
-            style={{
-              display: "flex",
-            }}
-          >
-            <Col>
-              <Row>{productElements}</Row>
-            </Col>
-          </Container>
-        </Col>
-        <Col lg={4}>
-          <Card>
-            <Card.Header>Shopping Cart</Card.Header>
-            {/* {shoppingCartElements}${shoppingCart.totalPrice} */}
-            {shoppingCartElements}
 
-            <span className={totalShow ? "total" : "hide"}>
-              ${shoppingCart.totalPrice}
-            </span>
-          </Card>
+  let totalPrice = 0.0;
+  let totalP = `$ ${Math.round(totalPrice)}`;
+  for (const productId in shoppingCart.products) {
+    totalPrice += shoppingCart.products[productId].subTotal;
+  }
+  return (
+    <div className="shop_wrapper">
+      <Container fluid>
+        {/* Navbar */}
+        <Row>
+          <Col style={{ padding: 0 }}>
+            <Navbar title="Shop" />
+          </Col>
+        </Row>
+        <Row>
+          <Col style={{ height: "5em" }}></Col>
+        </Row>
+        {/* Products - left */}
+        <Row>
+          <Col lg={9}>
+            <Container>
+              <Col>
+                <Row
+                  id="list_products_row"
+                  style={{
+                    display: "flex",
+                  }}
+                >
+                  {productElements}
+                </Row>
+              </Col>
+            </Container>
+          </Col>
+          {/* Shopping Cart */}
+          <Col lg={3} id="cart_col">
+            <Card style={{ padding: "0 !important" }}>
+              <Card.Header>
+                <FontAwesomeIcon
+                  icon={faShoppingCart}
+                  id="icon_cart_shopcart"
+                />
+                Your Order
+              </Card.Header>
+              {shoppingCartElements}
+              {totalShow && totalPrice != 0 ? (
+                <span id="cart_total">Total: $ {totalPrice.toFixed(2)}</span>
+              ) : null}
+            </Card>
+          </Col>
+        </Row>
+        <Col className="lastCol" style={{ padding: "0" }}>
+          <Row style={{ marginTop: "6em" }}>
+            <Footer />
+          </Row>
         </Col>
-      </Row>
-    </Container>
+      </Container>
+    </div>
   );
 }
